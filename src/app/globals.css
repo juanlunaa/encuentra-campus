@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+ * Encuentra Campus — "Registro y Archivo Universitario"
+ * Tokens de diseño: papel cálido, tinta, bordes de ficha y acentos institucionales.
+ */
+@theme {
+  /* Superficies */
+  --color-paper: #f6f4ef; /* fondo de la app (papel cálido) */
+  --color-bone: #fdfcfa; /* tarjetas, navbar, inputs (blanco hueso) */
+  --color-shade: #efebe3; /* hover / áreas hundidas */
+
+  /* Líneas de ficha */
+  --color-rule: #dcd7cc;
+  --color-rule-strong: #c8c1b2;
+
+  /* Tinta */
+  --color-ink: #1c1b18;
+  --color-ink-soft: #3a3730;
+  --color-sepia: #5c584f;
+  --color-faint: #8f897d;
+  --color-stone: #b9b1a2; /* series neutras en gráficas */
+
+  /* Acento primario: azul cobalto universitario */
+  --color-cobalt: #1e3a8a;
+  --color-cobalt-deep: #162c6b;
+  --color-cobalt-wash: #eaedf5;
+  --color-cobalt-line: #b7c1db;
+
+  /* Acento secundario: terracota ladrillo */
+  --color-brick: #b45309;
+  --color-brick-deep: #8a3f07;
+  --color-brick-wash: #faf0e4;
+  --color-brick-line: #e6c9a6;
+
+  /* Estados de sello */
+  --color-ochre: #7c5a06;
+  --color-ochre-strong: #9a6b0b;
+  --color-ochre-wash: #f8f1dc;
+  --color-ochre-line: #e3d19c;
+
+  --color-moss: #4b5a23;
+  --color-moss-wash: #eef0e2;
+  --color-moss-line: #c7cda8;
+
+  --color-alert: #9b2c1f;
+  --color-alert-deep: #7a2117;
+  --color-alert-wash: #f7eae5;
+  --color-alert-line: #e3c3b8;
+}
+
+/* Familias tipográficas cargadas con next/font en layout.tsx */
+@theme inline {
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Etiqueta rectangular tipo sello de archivo (el color del borde hereda del texto) */
+@utility stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-width: 1px;
+  border-style: solid;
+  border-color: currentColor;
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.4375rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  ::selection {
+    background-color: var(--color-cobalt);
+    color: var(--color-bone);
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.55;
+    cursor: pointer;
+  }
+}
