@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
+import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { authService } from "@/services/auth.service";
 import type { SessionUserDTO } from "@/types/user";
@@ -51,10 +52,19 @@ export default async function RootLayout({
       <body className="flex min-h-screen flex-col bg-paper font-sans text-ink antialiased">
         <Navbar initialUser={currentUser} />
         <div className="flex-1">{children}</div>
-        <footer className="border-t border-rule bg-bone py-5 text-center font-mono text-[11px] tracking-wide text-sepia">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            Encuentra Campus · Fundación Universitaria Tecnológico Comfenalco —
-            Sede B (Cedesarrollo)
+        <footer className="border-t border-rule bg-bone py-5 font-mono text-[11px] tracking-wide text-sepia">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-2 px-4 text-center sm:flex-row sm:px-6">
+            <Image
+              src="/isotipo.png"
+              alt="Encuentra Campus"
+              width={24}
+              height={24}
+              className="h-6 w-6 shrink-0"
+            />
+            <span>
+              Encuentra Campus · Fundación Universitaria Tecnológico Comfenalco
+              — Sede B (Cedesarrollo)
+            </span>
           </div>
         </footer>
       </body>

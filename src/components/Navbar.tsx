@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -66,23 +67,21 @@ export function Navbar({ initialUser }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-rule bg-bone/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-ink transition hover:opacity-90"
+            aria-label="Encuentra Campus — Ir al inicio"
+            className="flex shrink-0 items-center transition hover:opacity-90"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-cobalt font-serif text-base font-semibold text-bone">
-              EC
-            </span>
-            <div className="leading-tight">
-              <span className="block font-serif text-lg font-semibold tracking-tight">
-                Encuentra Campus
-              </span>
-              <span className="hidden font-mono text-[10px] tracking-[0.12em] text-sepia uppercase sm:block">
-                Sede B · Cedesarrollo
-              </span>
-            </div>
+            <Image
+              src="/imagotipo.png"
+              alt="Encuentra Campus — Encuentra. Verifica. Recupera."
+              width={1266}
+              height={551}
+              priority
+              className="h-11 w-auto sm:h-12"
+            />
           </Link>
 
           <nav

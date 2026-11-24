@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
@@ -70,6 +71,17 @@ function LoginForm() {
 
   return (
     <div className="rounded-md border border-rule bg-bone p-6 sm:p-8">
+      <div className="mb-6 flex justify-center border-b border-rule pb-5">
+        <Image
+          src="/imagotipo.png"
+          alt="Encuentra Campus — Encuentra. Verifica. Recupera."
+          width={1266}
+          height={551}
+          priority
+          className="h-14 w-auto sm:h-16"
+        />
+      </div>
+
       <div className="mb-6">
         <h1 className="font-serif text-2xl font-medium tracking-tight text-ink">
           Iniciar sesión

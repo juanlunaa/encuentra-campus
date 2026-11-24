@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -72,6 +73,17 @@ export default function RegisterPage() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-col justify-center px-4 py-10 sm:px-6 sm:py-14">
       <div className="rounded-md border border-rule bg-bone p-6 sm:p-8">
+        <div className="mb-6 flex justify-center border-b border-rule pb-5">
+          <Image
+            src="/imagotipo.png"
+            alt="Encuentra Campus — Encuentra. Verifica. Recupera."
+            width={1266}
+            height={551}
+            priority
+            className="h-14 w-auto sm:h-16"
+          />
+        </div>
+
         <div className="mb-6">
           <h1 className="font-serif text-2xl font-medium tracking-tight text-ink">
             Crear cuenta de estudiante
