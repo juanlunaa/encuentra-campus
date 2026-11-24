@@ -303,18 +303,27 @@ export async function uploadImagesWithRollback(
     return [];
   }
 
-  const uploaded: StoredImage[] = [];
+  const results = await Promise.allSettled(
+    files.map((file) => uploadImage(file, folder, entityId)),
+  );
 
-  try {
-    for (const file of files) {
-      const stored = await uploadImage(file, folder, entityId);
-      uploaded.push(stored);
+  const uploaded: StoredImage[] = [];
+  let firstError: unknown = null;
+
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      uploaded.push(result.value);
+    } else if (firstError === null) {
+      firstError = result.reason;
     }
-    return uploaded;
-  } catch (error) {
+  }
+
+  if (firstError !== null) {
     if (uploaded.length > 0) {
       await deleteImagesByKeys(uploaded.map((img) => img.key));
     }
-    throw error;
+    throw firstError;
   }
+
+  return uploaded;
 }

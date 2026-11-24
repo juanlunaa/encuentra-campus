@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -464,10 +465,12 @@ export function ClaimList({
                       rel="noopener noreferrer"
                       className="inline-block overflow-hidden rounded-md border border-rule bg-bone transition hover:opacity-90"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={claim.evidenceImage.url}
                         alt={`Evidencia enviada por ${claim.claimantName ?? "solicitante"}`}
+                        width={176}
+                        height={128}
+                        sizes="176px"
                         className="h-32 w-44 object-cover"
                       />
                     </a>

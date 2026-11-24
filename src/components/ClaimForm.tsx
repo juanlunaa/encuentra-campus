@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -270,10 +271,12 @@ export function ClaimForm({
                       rel="noopener noreferrer"
                       className="inline-block overflow-hidden rounded-sm border border-rule bg-bone"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={claim.evidenceImage.url}
                         alt="Evidencia adjunta en tu reclamo"
+                        width={128}
+                        height={96}
+                        sizes="128px"
                         className="h-24 w-32 object-cover"
                       />
                     </a>

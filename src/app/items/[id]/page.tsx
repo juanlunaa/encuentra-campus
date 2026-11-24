@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ClaimForm } from "@/components/ClaimForm";
@@ -141,17 +142,25 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
                   href={image.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group block overflow-hidden rounded-sm border border-rule bg-bone"
+                  className={`group relative block overflow-hidden rounded-sm border border-rule bg-bone ${
+                    item.images.length === 1
+                      ? "aspect-[16/10] sm:h-[420px] sm:aspect-auto"
+                      : "aspect-[4/3]"
+                  }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={image.url}
                     alt={`${item.title} — fotografía ${idx + 1}`}
-                    className={`w-full object-cover transition duration-300 group-hover:scale-105 ${
+                    fill
+                    priority={idx === 0}
+                    sizes={
                       item.images.length === 1
-                        ? "max-h-[420px]"
-                        : "aspect-[4/3]"
-                    }`}
+                        ? "(max-width: 1024px) 100vw, 900px"
+                        : item.images.length === 2
+                          ? "(max-width: 640px) 100vw, 450px"
+                          : "(max-width: 640px) 100vw, 300px"
+                    }
+                    className="object-cover transition duration-300 group-hover:scale-105"
                   />
                 </a>
               ))}

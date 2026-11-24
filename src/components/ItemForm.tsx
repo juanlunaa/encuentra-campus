@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -820,12 +821,15 @@ export function ItemForm({ mode, zones, initialItem }: ItemFormProps) {
                 key={img.key}
                 className="relative overflow-hidden rounded-md border border-rule bg-paper"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.url}
-                  alt="Imagen actual de la publicación"
-                  className="aspect-[4/3] w-full object-cover"
-                />
+                <div className="relative aspect-[4/3] w-full overflow-hidden">
+                  <Image
+                    src={img.url}
+                    alt="Imagen actual de la publicación"
+                    fill
+                    sizes="(max-width: 640px) 100vw, 240px"
+                    className="object-cover"
+                  />
+                </div>
                 <div className="flex items-center justify-between px-2.5 py-2 text-xs text-sepia">
                   <span>{formatFileSize(img.sizeBytes)}</span>
                   <button

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ITEM_STATUS_LABELS,
@@ -46,12 +47,12 @@ export function ItemCard({ item }: ItemCardProps) {
     >
       <div className="relative aspect-[3/2] w-full overflow-hidden border-b border-rule bg-shade">
         {coverImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={coverImage.url}
             alt={item.title}
-            loading="lazy"
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition duration-500 group-hover:scale-[1.03]"
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-shade px-4 text-center text-faint">

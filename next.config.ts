@@ -35,6 +35,8 @@ function buildRemotePatterns(): NonNullable<NextConfig["images"]>["remotePattern
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: buildRemotePatterns(),
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 2678400, // 31 días (las claves en R2/S3 usan UUID inmutables)
   },
 };
 
