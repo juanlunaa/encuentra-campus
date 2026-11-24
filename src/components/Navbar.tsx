@@ -12,6 +12,7 @@ interface NavbarProps {
 const NAV_LINKS = [
   { href: "/", label: "Explorar" },
   { href: "/items/new", label: "Publicar" },
+  { href: "/activity", label: "Mi actividad" },
   { href: "/reports", label: "Reportes" },
 ] as const;
 

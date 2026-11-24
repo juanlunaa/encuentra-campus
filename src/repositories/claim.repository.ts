@@ -1,10 +1,20 @@
 import { ObjectId, type Document } from "mongodb";
+import type { ItemCategory, ItemStatus } from "@/lib/catalogs";
 import { COLLECTIONS, getCollection } from "@/lib/mongodb";
+import type {
+  ActivityClaimSummaryDTO,
+  ActivityClaimsFilters,
+} from "@/types/activity";
 import type {
   ClaimDTO,
   ClaimDocument,
   NewClaimDocument,
 } from "@/types/claim";
+import type { StoredImage } from "@/types/found-item";
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 function toObjectId(id: string | ObjectId): ObjectId | null {
   if (typeof id === "string") {
@@ -299,12 +309,190 @@ export async function deleteClaimsByPostId(
   return evidenceKeys;
 }
 
+interface AggregatedActivityClaimRow {
+  _id: ObjectId;
+  postId: ObjectId;
+  status: ClaimDocument["status"];
+  resolutionReason: string | null;
+  createdAt: Date;
+  resolvedAt: Date | null;
+  item: {
+    _id: ObjectId;
+    title: string;
+    category: ItemCategory;
+    customCategory: string | null;
+    status: ItemStatus;
+    zoneCode: string;
+    zoneName: string;
+    images: StoredImage[];
+  };
+}
+
+function mapActivityClaimRow(
+  row: AggregatedActivityClaimRow,
+): ActivityClaimSummaryDTO {
+  const images = row.item.images ?? [];
+  return {
+    id: row._id.toHexString(),
+    postId: row.postId.toHexString(),
+    status: row.status,
+    resolutionReason: row.resolutionReason ?? null,
+    createdAt: row.createdAt.toISOString(),
+    resolvedAt: row.resolvedAt ? row.resolvedAt.toISOString() : null,
+    item: {
+      id: row.item._id.toHexString(),
+      title: row.item.title,
+      category: row.item.category,
+      customCategory: row.item.customCategory ?? null,
+      status: row.item.status,
+      zoneCode: row.item.zoneCode ?? "",
+      zoneName: row.item.zoneName ?? "Zona desconocida",
+      coverImage: images[0] ?? null,
+    },
+  };
+}
+
+export async function listClaimsByClaimant(
+  claimantId: ObjectId,
+  filters: ActivityClaimsFilters,
+): Promise<{
+  claims: ActivityClaimSummaryDTO[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const collection = await getCollection<ClaimDocument>(COLLECTIONS.claims);
+
+  const match: Document = { claimantId };
+  if (filters.status) {
+    match.status = filters.status;
+  }
+
+  const page = Math.max(1, filters.page ?? 1);
+  const limit = Math.min(50, Math.max(1, filters.limit ?? 10));
+  const skip = (page - 1) * limit;
+
+  const pipeline: Document[] = [
+    { $match: match },
+    {
+      $lookup: {
+        from: COLLECTIONS.foundItems,
+        localField: "postId",
+        foreignField: "_id",
+        pipeline: [
+          {
+            $project: {
+              _id: 1,
+              title: 1,
+              category: 1,
+              customCategory: 1,
+              status: 1,
+              zoneId: 1,
+              location: 1,
+              images: 1,
+            },
+          },
+        ],
+        as: "_item",
+      },
+    },
+    { $unwind: "$_item" },
+    {
+      $lookup: {
+        from: COLLECTIONS.campusZones,
+        localField: "_item.zoneId",
+        foreignField: "_id",
+        pipeline: [{ $project: { code: 1, name: 1 } }],
+        as: "_zone",
+      },
+    },
+    {
+      $addFields: {
+        zoneCode: {
+          $ifNull: [{ $arrayElemAt: ["$_zone.code", 0] }, ""],
+        },
+        zoneName: {
+          $ifNull: [{ $arrayElemAt: ["$_zone.name", 0] }, "Zona desconocida"],
+        },
+      },
+    },
+  ];
+
+  if (filters.query) {
+    const regex = new RegExp(escapeRegex(filters.query), "i");
+    pipeline.push({
+      $match: {
+        $or: [
+          { "_item.title": { $regex: regex } },
+          { "_item.location.roomOrDetail": { $regex: regex } },
+          { "_item.location.floor": { $regex: regex } },
+          { "_item.customCategory": { $regex: regex } },
+          { zoneName: { $regex: regex } },
+          { verificationAnswer: { $regex: regex } },
+        ],
+      },
+    });
+  }
+
+  pipeline.push({
+    $facet: {
+      metadata: [{ $count: "total" }],
+      data: [
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $project: {
+            _id: 1,
+            postId: 1,
+            status: 1,
+            resolutionReason: 1,
+            createdAt: 1,
+            resolvedAt: 1,
+            item: {
+              _id: "$_item._id",
+              title: "$_item.title",
+              category: "$_item.category",
+              customCategory: "$_item.customCategory",
+              status: "$_item.status",
+              zoneCode: "$zoneCode",
+              zoneName: "$zoneName",
+              images: "$_item.images",
+            },
+          },
+        },
+      ],
+    },
+  });
+
+  const [result] = await collection
+    .aggregate<{
+      metadata: Array<{ total: number }>;
+      data: AggregatedActivityClaimRow[];
+    }>(pipeline)
+    .toArray();
+
+  const total = result?.metadata[0]?.total ?? 0;
+  const claims = (result?.data ?? []).map(mapActivityClaimRow);
+
+  return { claims, total, page, limit };
+}
+
+export async function countClaimsByClaimant(
+  claimantId: ObjectId,
+): Promise<number> {
+  const collection = await getCollection<ClaimDocument>(COLLECTIONS.claims);
+  return collection.countDocuments({ claimantId });
+}
+
 export const claimRepository = {
   findById: findClaimById,
   findDetailById: findClaimDetailById,
   findPendingByPostAndClaimant: findPendingClaimByPostAndClaimant,
   findByPostAndClaimant: findClaimsByPostAndClaimant,
   listByPostId: listClaimsByPostId,
+  listByClaimant: listClaimsByClaimant,
+  countByClaimant: countClaimsByClaimant,
   create: createClaimDocument,
   markApproved: markClaimApproved,
   rejectOtherPending: rejectOtherPendingClaims,

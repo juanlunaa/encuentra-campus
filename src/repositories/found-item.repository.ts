@@ -1,5 +1,9 @@
 import { ObjectId, type Document, type Filter } from "mongodb";
 import { COLLECTIONS, getCollection } from "@/lib/mongodb";
+import type {
+  ActivityItemSummaryDTO,
+  ActivityItemsFilters,
+} from "@/types/activity";
 import type { ClaimDocument } from "@/types/claim";
 import type {
   FoundItemDetailDTO,
@@ -42,6 +46,34 @@ interface AggregatedSummaryRow extends FoundItemDocument {
 
 export interface FoundItemDetailRecord extends AggregatedSummaryRow {
   publisherContactPhone?: string;
+}
+
+interface AggregatedActivityItemRow extends FoundItemDocument {
+  zoneCode?: string;
+  zoneName?: string;
+  pendingClaimsCount?: number;
+}
+
+function mapActivityItemRow(
+  row: AggregatedActivityItemRow,
+): ActivityItemSummaryDTO {
+  const images = row.images ?? [];
+  return {
+    id: row._id.toHexString(),
+    title: row.title,
+    category: row.category,
+    customCategory: row.customCategory ?? null,
+    status: row.status,
+    zoneId: row.zoneId.toHexString(),
+    zoneCode: row.zoneCode ?? "",
+    zoneName: row.zoneName ?? "Zona desconocida",
+    location: row.location,
+    coverImage: images[0] ?? null,
+    imagesCount: images.length,
+    pendingClaimsCount: row.pendingClaimsCount ?? 0,
+    foundAt: row.foundAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+  };
 }
 
 function mapSummaryRow(row: AggregatedSummaryRow): FoundItemSummaryDTO {
@@ -523,11 +555,141 @@ export async function deleteClaimsByPostId(
   return evidenceKeys;
 }
 
+export async function listFoundItemsByPublisher(
+  publisherId: ObjectId,
+  filters: ActivityItemsFilters,
+): Promise<{
+  items: ActivityItemSummaryDTO[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const collection = await getCollection<FoundItemDocument>(
+    COLLECTIONS.foundItems,
+  );
+
+  const match: Document = { publisherId };
+
+  if (filters.status) {
+    match.status = filters.status;
+  }
+
+  if (filters.query) {
+    const regex = new RegExp(escapeRegex(filters.query), "i");
+    match.$or = [
+      { title: { $regex: regex } },
+      { description: { $regex: regex } },
+      { tags: { $regex: regex } },
+      { "location.roomOrDetail": { $regex: regex } },
+      { "location.floor": { $regex: regex } },
+      { customCategory: { $regex: regex } },
+    ];
+  }
+
+  const page = Math.max(1, filters.page ?? 1);
+  const limit = Math.min(50, Math.max(1, filters.limit ?? 10));
+  const skip = (page - 1) * limit;
+
+  const pipeline: Document[] = [
+    { $match: match },
+    {
+      $lookup: {
+        from: COLLECTIONS.claims,
+        let: { itemId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$postId", "$$itemId"] },
+                  { $eq: ["$status", "pending"] },
+                ],
+              },
+            },
+          },
+          { $count: "count" },
+        ],
+        as: "_pendingClaims",
+      },
+    },
+    {
+      $addFields: {
+        pendingClaimsCount: {
+          $ifNull: [{ $arrayElemAt: ["$_pendingClaims.count", 0] }, 0],
+        },
+      },
+    },
+  ];
+
+  if (filters.hasPendingClaims === true) {
+    pipeline.push({
+      $match: { pendingClaimsCount: { $gt: 0 } },
+    });
+  }
+
+  pipeline.push({
+    $facet: {
+      metadata: [{ $count: "total" }],
+      data: [
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: COLLECTIONS.campusZones,
+            localField: "zoneId",
+            foreignField: "_id",
+            pipeline: [{ $project: { code: 1, name: 1 } }],
+            as: "_zone",
+          },
+        },
+        {
+          $addFields: {
+            zoneCode: {
+              $ifNull: [{ $arrayElemAt: ["$_zone.code", 0] }, ""],
+            },
+            zoneName: {
+              $ifNull: [
+                { $arrayElemAt: ["$_zone.name", 0] },
+                "Zona desconocida",
+              ],
+            },
+          },
+        },
+        { $project: { _pendingClaims: 0, _zone: 0 } },
+      ],
+    },
+  });
+
+  const [result] = await collection
+    .aggregate<{
+      metadata: Array<{ total: number }>;
+      data: AggregatedActivityItemRow[];
+    }>(pipeline)
+    .toArray();
+
+  const total = result?.metadata[0]?.total ?? 0;
+  const items = (result?.data ?? []).map(mapActivityItemRow);
+
+  return { items, total, page, limit };
+}
+
+export async function countFoundItemsByPublisher(
+  publisherId: ObjectId,
+): Promise<number> {
+  const collection = await getCollection<FoundItemDocument>(
+    COLLECTIONS.foundItems,
+  );
+  return collection.countDocuments({ publisherId });
+}
+
 export const foundItemRepository = {
   findById: findItemById,
   findDetailById: findItemDetailById,
   create: createFoundItem,
   list: listFoundItems,
+  listByPublisher: listFoundItemsByPublisher,
+  countByPublisher: countFoundItemsByPublisher,
   updateFields: updateItemFields,
   pullImages: pullItemImages,
   pushImages: pushItemImages,

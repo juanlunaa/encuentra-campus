@@ -249,9 +249,19 @@ const indexDefinitions: IndexDefinition[] = [
     },
   },
   {
+    collection: COLLECTIONS.foundItems,
+    spec: { publisherId: 1, createdAt: -1 },
+    options: { name: "idx_found_items_publisherId_createdAt" },
+  },
+  {
     collection: COLLECTIONS.claims,
     spec: { postId: 1, status: 1 },
     options: { name: "idx_claims_postId_status" },
+  },
+  {
+    collection: COLLECTIONS.claims,
+    spec: { claimantId: 1, createdAt: -1 },
+    options: { name: "idx_claims_claimantId_createdAt" },
   },
   {
     collection: COLLECTIONS.claims,
